@@ -1,0 +1,61 @@
+- name: Installiere EPEL-Repository (für Nginx)
+  yum:
+    name: epel-release
+    state: present
+
+- name: Installiere Nginx
+  yum:
+     name: nginx
+     state: present
+
+- name: Starte und aktiviere Nginx
+  systemd:
+    name: nginx
+    enabled: yes
+    state: started
+  
+- name: Aktivieren Sie das Modul für PHP 8.0
+  command: dnf module reset php -y
+  ignore_errors: yes
+
+- name: Aktivieren Sie PHP 8.0
+  command: dnf module enable php:8.0 -y
+
+- name: Installiere PHP 8.0 und PHP-FPM
+  yum:
+    name: php-fpm
+    state: present
+
+- name: Starte und aktiviere PHP-FPM
+  systemd:
+    name: php-fpm
+    enabled: yes
+    state: started
+
+- name: Stelle sicher, dass Nginx PHP-Dateien verarbeitet
+  copy:
+    dest: /etc/nginx/sites-available/default
+    content: |
+      server {
+          listen 80 default_server;
+          listen [::]:80 default_server;
+
+          root /var/www/html;
+          index index.php index.html index.htm;
+
+          server_name _;
+
+          location / {
+              try_files $uri $uri/ =404;
+          }
+
+          location ~ \.php$ {
+              include snippets/fastcgi-php.conf;
+              fastcgi_pass unix:/var/run/php/php7.4-fpm.sock;  # Passe die PHP-Version an
+          }
+
+          location ~ /\.ht {
+              deny all;
+          }
+      }
+  notify: Reload Nginx

@@ -1,0 +1,8 @@
+- name: Playbook zum Installieren von nginx und php, inkl. OS-Update
+  hosts: all
+  roles:
+  - role: update
+    tags: r_update
+
+  - role: webserver
+    tags: r_install_webserver
